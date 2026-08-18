@@ -51,8 +51,8 @@ jobs:
           path: solutions/build/*.log
           if-no-files-found: ignore
 
-  publish:
-    name: Опубликовать
+  pages:
+    name: Опубликовать на Pages
     needs: [check, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -79,12 +79,24 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v4
 
-      - name: Обновить релиз latest
-        uses: softprops/action-gh-release@v2
+  release:
+    name: Обновить релиз latest
+    # намеренно не зависит от pages: сбой деплоя не должен лишать релиз файлов
+    needs: [check, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Забрать собранные PDF
+        uses: actions/download-artifact@v4
+        with:
+          name: pdf
+          path: pdf
+
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Последняя сборка
           body: |
             Автоматическая сборка сборника из ветки `main`, коммит ${{ github.sha }}.
-          files: solutions/build/*.pdf
+          files: pdf/*.pdf
           make_latest: true
