@@ -31,7 +31,7 @@ def chapters():
         num = int(path.stem[2:])
         text = path.read_text(encoding="utf-8")
         title = re.search(r"\\section\{(.*?)\}", text).group(1)
-        exercises = re.findall(r"\\subsection\{\*?Упражнение ([\d.]+)", text)
+        exercises = re.findall(r"\\subsection\{\*?Упражнение (\d+\.\d+)", text)
         out.append((num, title, exercises))
     return out
 

@@ -39,3 +39,12 @@
 \newenvironment{solution}
   {\begin{proof}[Решение]}
   {\end{proof}}
+% Ссылка из решения на ноутбук с вычислительным экспериментом.
+% #1 — имя файла без расширения, #2 — номер упражнения для подписи.
+\newcommand{\notebook}[2]{%
+  \par\smallskip\noindent
+  {\small\textit{Вычислительный эксперимент:}~%
+   \href{https://github.com/MichaelToschenko/RL_Sutton_Barto_Solutions/blob/main/notebooks/#1.ipynb}%
+        {ноутбук к упражнению #2 на GitHub}}\par\smallskip
+}
+

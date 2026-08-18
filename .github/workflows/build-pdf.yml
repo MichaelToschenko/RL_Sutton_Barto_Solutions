@@ -16,52 +16,68 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    name: Проверки репозитория
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Оглавление README не отстало от исходников
+        run: python3 tools/build_index.py --check
+
   build:
     name: Собрать сборник
     runs-on: ubuntu-latest
+    # в образе есть полный TeX Live с babel-russian, cm-super и algorithm2e;
+    # ничего, кроме latexmk, внутри контейнера не запускается
     container: texlive/texlive:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Проверить, что оглавление README актуально
-        run: python3 tools/build_index.py --check
-
       - name: Собрать сборник и главы
         run: bash tools/build_pdf.sh
 
-      - name: Подготовить каталог для Pages
-        run: python3 tools/build_pages.py
-
-      - name: Сохранить PDF как артефакт сборки
+      - name: Сохранить PDF
         uses: actions/upload-artifact@v4
         with:
           name: pdf
           path: solutions/build/*.pdf
           if-no-files-found: error
 
-      - name: Сохранить каталог Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Сохранить журналы сборки при неудаче
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          path: solutions/build/site
+          name: latex-logs
+          path: solutions/build/*.log
+          if-no-files-found: ignore
 
   publish:
     name: Опубликовать
-    needs: build
+    needs: [check, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.pages.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Выложить на GitHub Pages
-        id: pages
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
 
       - name: Забрать собранные PDF
         uses: actions/download-artifact@v4
         with:
           name: pdf
-          path: pdf
+          path: solutions/build
+
+      - name: Собрать страницу-указатель
+        run: python3 tools/build_pages.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: solutions/build/site
+
+      - name: Выложить на GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
 
       - name: Обновить релиз latest
         uses: softprops/action-gh-release@v2
@@ -70,5 +86,5 @@ jobs:
           name: Последняя сборка
           body: |
             Автоматическая сборка сборника из ветки `main`, коммит ${{ github.sha }}.
-          files: pdf/*.pdf
+          files: solutions/build/*.pdf
           make_latest: true
