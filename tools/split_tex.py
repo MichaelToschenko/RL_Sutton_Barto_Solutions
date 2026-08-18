@@ -73,6 +73,7 @@ def main():
     skeleton = []        # строки нового main.tex между \tableofcontents и \end{document}
     chapters = {}        # номер главы -> строки
     current = None
+    pending_part = None  # \part, ждущий начала своей главы
 
     for line in body:
         if line.startswith(r"\section{"):
@@ -81,14 +82,17 @@ def main():
             if title in TITLE_FIXES:
                 line = "\\section{%s}" % TITLE_FIXES[title][1]
             current = num
-            chapters[num] = [line]
+            chapters[num] = ([pending_part] if pending_part else []) + [line]
+            pending_part = None
             skeleton.append("\\include{chapters/ch%02d}" % num)
         elif line.startswith(r"\part{"):
-            # \part в классе article не начинает страницу сам — \newpage обязателен
+            # \part уходит в начало следующей главы: если оставить его в main.tex,
+            # \clearpage от \include отправит заголовок части на отдельную
+            # почти пустую страницу
+            pending_part = line
+            title = re.match(r"\\part\{(.*)\}", line).group(1)
             skeleton.append("")
-            skeleton.append(r"\newpage")
-            skeleton.append(line)
-            skeleton.append("")
+            skeleton.append("%% часть «%s» открывается следующей главой" % title)
             current = None
         elif line.strip() == r"\newpage" and current is None:
             pass          # \newpage перед \part уже добавлен выше

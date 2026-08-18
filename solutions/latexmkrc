@@ -4,3 +4,7 @@ $pdf_mode = 1;
 $pdflatex = 'pdflatex -interaction=nonstopmode -halt-on-error -file-line-error %O %S';
 $out_dir  = 'build';
 $clean_ext = 'synctex.gz run.xml bbl';
+
+# Библиографии в сборнике нет. Latexmk всё равно пишет в лог строку про bibtex
+# на этапе планирования, но сам bibtex при этом не запускается.
+$bibtex_use = 0;
