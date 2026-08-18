@@ -1,0 +1,68 @@
+\section{Глава 17. Передовые рубежи}
+\subsection{Упражнение 17.1(с. 526)}
+В этом разделе описаны опции для случая с обесцениванием, но обесценивание вряд
+ли применимо к управлению, когда используется аппроксимация функций
+(раздел 10.4). Как выглядит естественное уравнение Беллмана для иерархической
+стратегии, аналогичное (17.4), но в постановке со средним вознаграждением
+(раздел 10.3)? Каковы две части модели опций, аналогичные (17.2) и (17.3), для
+постановки со средним вознаграждением?
+\begin{equation}
+    r(s,\omega) \doteq \mathbb E\big[R_1+\gamma R_2+\gamma^2 R_3+\cdots+\gamma^{\tau-1}R_\tau
+    \mid S_0=s,\ A_{0:\tau-1}\sim\pi_\omega,\ \tau\sim\gamma_\omega\big],
+    \tag{17.2}
+\end{equation}
+\begin{equation}
+    p(s'\mid s,\omega) \doteq \sum_{k=1}^{\infty}\gamma^k
+    \Pr\{S_k=s',\ \tau=k\mid S_0=s,\ A_{0:k-1}\sim\pi_\omega,\ \tau\sim\gamma_\omega\},
+    \tag{17.3}
+\end{equation}
+\begin{equation}
+    v_\pi(s) = \sum_{\omega\in\Omega(s)}\pi(\omega\mid s)
+    \Big[r(s,\omega)+\sum_{s'}p(s'\mid s,\omega)v_\pi(s')\Big],
+    \tag{17.4}
+\end{equation}
+\begin{solution}
+    \textbf{Части модели опций.} В постановке со средним вознаграждением
+    обесценивание отсутствует, поэтому в (17.2) и (17.3) следует положить
+    $\gamma=1$:
+    \begin{equation}
+        r(s,\omega) \doteq \mathbb E\big[R_1+R_2+\cdots+R_\tau
+        \mid S_0=s,\ A_{0:\tau-1}\sim\pi_\omega,\ \tau\sim\gamma_\omega\big],
+        \tag{17.2$'$}
+    \end{equation}
+    \begin{equation}
+        p(s'\mid s,\omega) \doteq \sum_{k=1}^{\infty}
+        \Pr\{S_k=s',\ \tau=k\mid S_0=s,\ A_{0:k-1}\sim\pi_\omega,\ \tau\sim\gamma_\omega\}.
+        \tag{17.3$'$}
+    \end{equation}
+    Величина $r(s,\omega)$ --- полное вознаграждение, накопленное за время
+    выполнения опции. В отличие от дисконтированного случая, (17.3$'$) снова
+    является настоящим распределением: если опция завершается за конечное время
+    почти наверное ($\Pr\{\tau<\infty\}=1$), то $\sum_{s'}p(s'\mid s,\omega)=1$,
+    и обозначение «$\mid$» становится условным в обычном смысле.
+
+    \textbf{Уравнение Беллмана.} В постановке со средним вознаграждением из
+    вознаграждения на каждом \emph{элементарном} шаге вычитается $r(\pi)$ ---
+    среднее вознаграждение иерархической стратегии $\pi$,
+    \[
+        r(\pi) \doteq \lim_{h\to\infty}\frac1h\sum_{t=1}^{h}
+        \mathbb E\big[R_t\mid S_0,\ A_{0:t-1}\sim\pi\big],
+    \]
+    где усреднение ведётся по элементарным шагам, а не по моментам принятия
+    решений. Опция занимает $\tau$ шагов, поэтому вычесть нужно не $r(\pi)$, а
+    $r(\pi)$, умноженное на ожидаемую длительность опции:
+    \begin{equation}
+        \bar\tau(s,\omega) \doteq \mathbb E\big[\tau\mid S_0=s,\ A_{0:\tau-1}\sim\pi_\omega,\ \tau\sim\gamma_\omega\big].
+        \tag{17.6}
+    \end{equation}
+    Дифференциальное уравнение Беллмана для иерархической стратегии принимает вид
+    \begin{equation}
+        v_\pi(s) = \sum_{\omega\in\Omega(s)}\pi(\omega\mid s)
+        \Big[r(s,\omega)-r(\pi)\,\bar\tau(s,\omega)+\sum_{s'}p(s'\mid s,\omega)v_\pi(s')\Big],
+        \tag{17.4$'$}
+    \end{equation}
+    где $v_\pi$ --- дифференциальные ценности состояний, определённые с точностью
+    до общей аддитивной константы. При $\bar\tau\equiv 1$ (все опции ---
+    низкоуровневые действия) уравнение сводится к обычному дифференциальному
+    уравнению Беллмана.
+\end{solution}

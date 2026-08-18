@@ -1,0 +1,356 @@
+\section{Глава 13. Методы градиента стратегии}
+
+\subsection{Упражнение 13.1(с. 376)}
+Воспользуйтесь своими знаниями о сеточном мире и его динамике, чтобы найти точное
+символьное выражение для оптимальной вероятности выбора действия \texttt{right} в
+примере 13.1.
+
+\begin{solution}
+    Векторы признаков $\mathbf x(s,\texttt{right})=[1,0]^\top$ и
+    $\mathbf x(s,\texttt{left})=[0,1]^\top$ не зависят от состояния, поэтому любая
+    параметризованная стратегия выбирает \texttt{right} с одной и той же
+    вероятностью $p$ во всех трёх незаключительных состояниях. Пространство
+    доступных стратегий --- отрезок $p\in[0,1]$, и задача сводится к максимизации
+    $J(p)=v_{\pi_p}(S_1)$ по одной переменной.
+
+    Уравнения Беллмана ($\gamma=1$, вознаграждение $-1$ за шаг; в $S_2$ действия
+    переставлены: \texttt{right} ведёт в $S_1$, \texttt{left} --- в $S_3$; в $S_1$
+    действие \texttt{left} оставляет на месте):
+    \begin{align*}
+        v(S_1) &= -1 + p\,v(S_2) + (1-p)\,v(S_1),\\
+        v(S_2) &= -1 + p\,v(S_1) + (1-p)\,v(S_3),\\
+        v(S_3) &= -1 + (1-p)\,v(S_2).
+    \end{align*}
+
+    Из первого уравнения $p\,v(S_1) = -1 + p\,v(S_2)$, то есть
+    \begin{equation*}
+        v(S_1) = v(S_2) - \tfrac1p.
+    \end{equation*}
+    Подставляя это и третье уравнение во второе:
+    \begin{equation*}
+        v(S_2) = -1 + p\Big(v(S_2)-\tfrac1p\Big) + (1-p)\big(-1+(1-p)v(S_2)\big),
+    \end{equation*}
+    откуда $v(S_2)\big[1-p-(1-p)^2\big] = p-3$. Коэффициент слева упрощается до
+    $p(1-p)$, поэтому
+    \begin{equation*}
+        v(S_2) = \frac{p-3}{p(1-p)},
+        \qquad
+        J(p) = v(S_1) = \frac{p-3}{p(1-p)} - \frac1p = \frac{2p-4}{p(1-p)}.
+    \end{equation*}
+
+    Дифференцируем и приравниваем к нулю. Условие $J'(p)=0$ даёт
+    \begin{equation*}
+        p^2 - 4p + 2 = 0
+        \qquad\Longrightarrow\qquad
+        p = 2 \pm \sqrt2 .
+    \end{equation*}
+    Корень $2+\sqrt2>1$ отбрасываем, поэтому
+    \begin{equation*}
+        \boxed{\;p^* = 2-\sqrt2 \approx 0.5858\;}
+    \end{equation*}
+    и соответствующая ценность
+    \begin{equation*}
+        J(p^*) = \frac{2(2-\sqrt2)-4}{(2-\sqrt2)(\sqrt2-1)} \approx -11.66,
+    \end{equation*}
+    что согласуется со значением $\approx -11.6$ из примера 13.1.
+\end{solution}
+
+\subsection{*Упражнение 13.2(с. 380)}
+Обобщите рассуждения во врезке на стр. 240, теорему о градиенте стратегии
+(13.5), доказательство теоремы о градиенте стратегии (с. 377) и шаги,
+приведшие к обобщению REINFORCE (13.8), так чтобы в (13.8) появился
+коэффициент $\gamma^t$ и, следовательно, было устранено расхождение
+с псевдокодом.
+\begin{equation}
+    \eta(s) = h(s) + \sum_{\bar s}\eta(\bar s)\sum_a \pi(a\mid\bar s)p(s\mid\bar s,a),
+    \quad\text{для всех } s\in\mathcal S,
+    \tag{9.2}
+\end{equation}
+\begin{equation}
+    \mu(s) \doteq \frac{\eta(s)}{\sum_{s'}\eta(s')},
+    \quad\text{для всех } s\in\mathcal S,
+    \tag{9.3}
+\end{equation}
+\begin{equation}
+    \nabla J(\boldsymbol\theta) \propto
+    \sum_s \mu(s)\sum_a q_\pi(s,a)\,\nabla\pi(a\mid s,\boldsymbol\theta),
+    \tag{13.5}
+\end{equation}
+\begin{equation}
+    \boldsymbol\theta_{t+1} \doteq \boldsymbol\theta_t
+    + \alpha\,G_t\,\frac{\nabla\pi(A_t\mid S_t,\boldsymbol\theta_t)}{\pi(A_t\mid S_t,\boldsymbol\theta_t)}.
+    \tag{13.8}
+\end{equation}
+\begin{solution}
+    \textbf{1. Врезка (с. 240).} Обесценивание трактуется как форма завершения:
+    переход из $\bar s$ в $s$ учитывается с весом $\gamma$. Уравнение (9.2)
+    принимает вид
+    \begin{equation}
+        \eta(s) = h(s) + \gamma\sum_{\bar s}\eta(\bar s)\sum_a \pi(a\mid\bar s)p(s\mid\bar s,a),
+        \quad\text{для всех } s\in\mathcal S.
+        \tag{9.2$'$}
+    \end{equation}
+    Разворачивая эту рекурсию, получаем
+    \begin{equation}
+        \eta(s) = \sum_{t=0}^{\infty}\gamma^t\Pr\{S_t = s\},
+        \tag{9.2$''$}
+    \end{equation}
+    т.\,е.\ \emph{обесцененное} ожидаемое число посещений $s$ за эпизод;
+    начальный член входит с $\gamma^0=1$, поэтому $h(s)$ остаётся без множителя.
+    Определение (9.3) не меняется по форме: $\mu(s)=\eta(s)/\sum_{s'}\eta(s')$.
+
+    \textbf{2. Доказательство теоремы (с. 377).} Единственное изменение --- в
+    развороте по Беллману используется $r+\gamma v_\pi(s')$ вместо $r+v_\pi(s')$:
+    \[
+        \nabla v_\pi(s) = \sum_a\Big[\nabla\pi(a\mid s)q_\pi(s,a)
+        + \gamma\,\pi(a\mid s)\sum_{s'}p(s'\mid s,a)\nabla v_\pi(s')\Big].
+    \]
+    При каждом следующем витке рекурсии добавляется ещё один множитель $\gamma$,
+    так что после $k$ шагов накапливается $\gamma^k$, и
+    \[
+        \nabla J(\boldsymbol\theta)
+        = \sum_s\Big[\sum_{k=0}^{\infty}\gamma^k\Pr(s_0\!\to\! s,k,\pi)\Big]
+          \sum_a\nabla\pi(a\mid s)q_\pi(s,a)
+        = \sum_s \eta(s)\sum_a\nabla\pi(a\mid s)q_\pi(s,a),
+    \]
+    где внутренняя скобка --- в точности новое $\eta(s)$ из (9.2$''$). Далее по
+    (9.3) $\eta(s)=\mu(s)\sum_{s'}\eta(s')$, и все $\gamma$ поглощаются
+    определением $\mu$.
+
+    \textbf{3. Формулировка теоремы.} Вид (13.5) сохраняется дословно; меняется
+    только смысл $\mu$ (обесцененное распределение с единой стратегией) и
+    константа пропорциональности: вместо средней длины эпизода это
+    $\sum_{s}\eta(s)$ --- ожидаемый обесцененный горизонт.
+
+    \textbf{4. Шаги к REINFORCE.} Здесь $\gamma$ уже не сворачивается. Веса
+    $\mu(s)$ содержат множитель $\gamma^t$, тогда как траектория под $\pi$
+    посещает состояния с невзвешенными частотами, поэтому при переходе
+    $\sum_s\mu(s)(\cdot)\to\mathbb E_\pi[\cdot]$ этот множитель приходится
+    выписывать явно:
+    \[
+        \nabla J(\boldsymbol\theta)
+        \propto \sum_s\sum_{t=0}^{\infty}\gamma^t\Pr\{S_t=s\}\sum_a q_\pi(s,a)\nabla\pi(a\mid s,\boldsymbol\theta)
+        = \mathbb E_\pi\Big[\gamma^t\sum_a q_\pi(S_t,a)\nabla\pi(a\mid S_t,\boldsymbol\theta)\Big].
+    \]
+    Последующие преобразования множитель $\gamma^t$ не затрагивают: он не зависит
+    ни от $a$, ни от будущего. Домножение и деление на $\pi(a\mid S_t,\boldsymbol\theta)$,
+    замена суммы по действиям выборкой $A_t\sim\pi$ и подстановка
+    $q_\pi(S_t,A_t)=\mathbb E_\pi[G_t\mid S_t,A_t]$ дают
+    \[
+        \nabla J(\boldsymbol\theta)
+        \propto \mathbb E_\pi\Big[\gamma^t G_t\,
+        \frac{\nabla\pi(A_t\mid S_t,\boldsymbol\theta)}{\pi(A_t\mid S_t,\boldsymbol\theta)}\Big],
+    \]
+    откуда правило обновления
+    \begin{equation}
+        \boldsymbol\theta_{t+1} \doteq \boldsymbol\theta_t
+        + \alpha\,\gamma^t G_t\,\nabla\ln\pi(A_t\mid S_t,\boldsymbol\theta_t),
+        \tag{13.8$'$}
+    \end{equation}
+    что совпадает с псевдокодом на с.\ 381 и устраняет расхождение.
+\end{solution}
+
+\subsection{Упражнение 13.3(с. 381)}
+В разделе 13.1 мы рассмотрели параметризацию стратегии с помощью softmax по
+предпочтениям действий (13.2) с линейными предпочтениями действий (13.3). Для
+этой параметризации, применяя определения и факты из элементарного
+математического анализа, докажите, что вектор приемлемости имеет вид (13.9).
+\begin{equation}
+    \pi(a\mid s,\boldsymbol\theta) \doteq
+    \frac{e^{h(s,a,\boldsymbol\theta)}}{\sum_b e^{h(s,b,\boldsymbol\theta)}},
+    \tag{13.2}
+\end{equation}
+\begin{equation}
+    h(s,a,\boldsymbol\theta) = \boldsymbol\theta^\top\mathbf x(s,a),
+    \tag{13.3}
+\end{equation}
+\begin{equation}
+    \nabla\ln\pi(a\mid s,\boldsymbol\theta) = \mathbf x(s,a)
+    - \sum_b \pi(b\mid s,\boldsymbol\theta)\mathbf x(s,b).
+    \tag{13.9}
+\end{equation}
+\begin{solution}
+    Логарифмируя (13.2) и подставляя (13.3), получаем
+    \[
+        \ln\pi(a\mid s,\boldsymbol\theta)
+        = h(s,a,\boldsymbol\theta) - \ln\sum_b e^{h(s,b,\boldsymbol\theta)}
+        = \boldsymbol\theta^\top\mathbf x(s,a)
+        - \ln\sum_b e^{\boldsymbol\theta^\top\mathbf x(s,b)}.
+    \]
+    Первое слагаемое линейно по $\boldsymbol\theta$, поэтому
+    $\nabla\big(\boldsymbol\theta^\top\mathbf x(s,a)\big) = \mathbf x(s,a)$.
+    Ко второму применяем правило дифференцирования сложной функции
+    ($\nabla\ln u = \nabla u/u$) и $\nabla e^{\boldsymbol\theta^\top\mathbf x(s,b)}
+    = e^{\boldsymbol\theta^\top\mathbf x(s,b)}\mathbf x(s,b)$:
+    \[
+        \nabla\ln\sum_b e^{\boldsymbol\theta^\top\mathbf x(s,b)}
+        = \frac{\sum_b e^{\boldsymbol\theta^\top\mathbf x(s,b)}\mathbf x(s,b)}
+               {\sum_{b'} e^{\boldsymbol\theta^\top\mathbf x(s,b')}}
+        = \sum_b \frac{e^{h(s,b,\boldsymbol\theta)}}{\sum_{b'} e^{h(s,b',\boldsymbol\theta)}}\,\mathbf x(s,b)
+        = \sum_b \pi(b\mid s,\boldsymbol\theta)\mathbf x(s,b),
+    \]
+    где на последнем шаге использовано определение (13.2). Вычитая, получаем
+    \[
+        \nabla\ln\pi(a\mid s,\boldsymbol\theta)
+        = \mathbf x(s,a) - \sum_b \pi(b\mid s,\boldsymbol\theta)\mathbf x(s,b),
+    \]
+\end{solution}
+
+\subsection{Упражнение 13.4(с. 389)}
+Покажите, что для гауссовой параметризации стратегии (13.19) вектор
+приемлемости состоит из таких двух частей:
+\[
+    \nabla\ln\pi(a\mid s,\boldsymbol\theta_\mu)
+    = \frac{\nabla\pi(a\mid s,\boldsymbol\theta_\mu)}{\pi(a\mid s,\boldsymbol\theta)}
+    = \frac{1}{\sigma(s,\boldsymbol\theta)^2}\big(a-\mu(s,\boldsymbol\theta)\big)\mathbf x_\mu(s)
+    \quad\text{и}
+\]
+\[
+    \nabla\ln\pi(a\mid s,\boldsymbol\theta_\sigma)
+    = \frac{\nabla\pi(a\mid s,\boldsymbol\theta_\sigma)}{\pi(a\mid s,\boldsymbol\theta)}
+    = \left(\frac{\big(a-\mu(s,\boldsymbol\theta)\big)^2}{\sigma(s,\boldsymbol\theta)^2}-1\right)\mathbf x_\sigma(s).
+\]
+\begin{equation}
+    \pi(a\mid s,\boldsymbol\theta) \doteq
+    \frac{1}{\sigma(s,\boldsymbol\theta)\sqrt{2\pi}}
+    \exp\left(-\frac{\big(a-\mu(s,\boldsymbol\theta)\big)^2}{2\sigma(s,\boldsymbol\theta)^2}\right),
+    \tag{13.19}
+\end{equation}
+\begin{equation}
+    \mu(s,\boldsymbol\theta) \doteq \boldsymbol\theta_\mu^\top\mathbf x_\mu(s),
+    \qquad
+    \sigma(s,\boldsymbol\theta) \doteq \exp\big(\boldsymbol\theta_\sigma^\top\mathbf x_\sigma(s)\big),
+    \tag{13.20}
+\end{equation}
+\begin{solution}
+    Прологарифмируем (13.19) (аргументы $s,\boldsymbol\theta$ у $\mu$ и $\sigma$ далее
+    опускаем):
+    \[
+        \ln\pi(a\mid s,\boldsymbol\theta)
+        = -\ln\sigma - \tfrac12\ln(2\pi) - \frac{(a-\mu)^2}{2\sigma^2}.
+    \]
+    Вектор параметров разбит на две части $\boldsymbol\theta=[\boldsymbol\theta_\mu,\boldsymbol\theta_\sigma]^\top$,
+    причём согласно (13.20) $\mu$ зависит только от $\boldsymbol\theta_\mu$, а $\sigma$ ---
+    только от $\boldsymbol\theta_\sigma$, поэтому градиенты по ним берутся независимо.
+
+    \textbf{Часть $\boldsymbol\theta_\mu$.} Первые два слагаемых от $\boldsymbol\theta_\mu$
+    не зависят. Так как $\nabla_{\boldsymbol\theta_\mu}\mu = \mathbf x_\mu(s)$, по правилу
+    дифференцирования сложной функции
+    \[
+        \nabla\ln\pi(a\mid s,\boldsymbol\theta_\mu)
+        = -\frac{1}{2\sigma^2}\cdot 2(a-\mu)\cdot(-1)\cdot\nabla_{\boldsymbol\theta_\mu}\mu
+        = \frac{1}{\sigma^2}(a-\mu)\,\mathbf x_\mu(s).
+    \]
+
+    \textbf{Часть $\boldsymbol\theta_\sigma$.} Подставим
+    $\sigma=\exp(\boldsymbol\theta_\sigma^\top\mathbf x_\sigma)$, тогда
+    $\ln\sigma = \boldsymbol\theta_\sigma^\top\mathbf x_\sigma$ и
+    $\sigma^{-2}=\exp(-2\boldsymbol\theta_\sigma^\top\mathbf x_\sigma)$:
+    \[
+        \ln\pi(a\mid s,\boldsymbol\theta)
+        = -\boldsymbol\theta_\sigma^\top\mathbf x_\sigma - \tfrac12\ln(2\pi)
+        - \tfrac12 (a-\mu)^2\exp\big(-2\boldsymbol\theta_\sigma^\top\mathbf x_\sigma\big).
+    \]
+    Величина $(a-\mu)^2$ от $\boldsymbol\theta_\sigma$ не зависит, поэтому оба слагаемых
+    дифференцируются напрямую:
+    \[
+        \nabla\ln\pi(a\mid s,\boldsymbol\theta_\sigma)
+        = -\mathbf x_\sigma(s)
+        - \tfrac12 (a-\mu)^2\cdot(-2)\exp\big(-2\boldsymbol\theta_\sigma^\top\mathbf x_\sigma\big)\mathbf x_\sigma(s)
+        = \left(\frac{(a-\mu)^2}{\sigma^2}-1\right)\mathbf x_\sigma(s).
+    \]
+    Обе части совпадают с требуемыми выражениями.
+\end{solution}
+
+\subsection{Упражнение 13.5(с. 389)}
+\emph{Логистический блок Бернулли} --- это стохастический нейроноподобный
+блок, применяемый в некоторых ИНС (раздел 9.7). Его входом в момент $t$
+является вектор признаков $\mathbf x(S_t)$, выходом --- случайная величина $A_t$,
+принимающая два значения, 0 или 1, с вероятностями $\Pr\{A_t=1\}=P_t$ и
+$\Pr\{A_t=0\}=1-P_t$ (распределение Бернулли). Обозначим $h(s,0,\boldsymbol\theta)$
+и $h(s,1,\boldsymbol\theta)$ предпочтения, отдаваемые двум действиям в состоянии $s$
+при заданном параметре стратегии $\boldsymbol\theta$. Предположим, что разность
+между предпочтениями действий описывается взвешенной суммой элементов вектора
+входов в блок, т.\,е.\ $h(s,1,\boldsymbol\theta)-h(s,0,\boldsymbol\theta)
+=\boldsymbol\theta^\top\mathbf x(s)$, где $\boldsymbol\theta$ --- вектор весов блока.
+\begin{enumerate}
+    \item[(a)] Покажите, что если для преобразования предпочтений действий в
+    стратегии используется экспоненциальное распределение softmax (13.2), то
+    $P_t=\pi(1\mid S_t,\boldsymbol\theta)=1/\big(1+\exp(-\boldsymbol\theta^\top\mathbf x(S_t))\big)$
+    (логистическая функция).
+    \item[(b)] Как выглядит обновление $\boldsymbol\theta_t$ до $\boldsymbol\theta_{t+1}$
+    в методе REINFORCE Монте-Карло при получении дохода $G_t$?
+    \item[(c)] Выразите вектор приемлемости $\nabla\ln\pi(a\mid s,\boldsymbol\theta)$
+    для логистического блока Бернулли в терминах $a$, $\mathbf x(s)$ и
+    $\pi(a\mid s,\boldsymbol\theta)$, вычислив градиент.
+\end{enumerate}
+\emph{Указание:} отдельно для каждого действия вычислите производную логарифма
+по $P_t=\pi(a\mid s,\boldsymbol\theta)$, объедините оба результата в одно выражение,
+зависящее от $a$ и $P_t$, а затем воспользуйтесь правилом дифференцирования
+сложной функции, заметив, что производная логистической функции $f(x)$ равна
+$f(x)(1-f(x))$.
+\begin{equation}
+    \pi(a\mid s,\boldsymbol\theta) \doteq
+    \frac{e^{h(s,a,\boldsymbol\theta)}}{\sum_b e^{h(s,b,\boldsymbol\theta)}},
+    \tag{13.2}
+\end{equation}
+\begin{solution}
+    \textbf{(a)} Пространство действий состоит из двух элементов, поэтому сумма
+    в знаменателе (13.2) содержит два слагаемых. Разделив числитель и знаменатель
+    на $e^{h(s,1,\boldsymbol\theta)}$, получаем
+    \[
+        P_t = \pi(1\mid S_t,\boldsymbol\theta)
+        = \frac{e^{h(s,1,\boldsymbol\theta)}}{e^{h(s,0,\boldsymbol\theta)}+e^{h(s,1,\boldsymbol\theta)}}
+        = \frac{1}{1+e^{h(s,0,\boldsymbol\theta)-h(s,1,\boldsymbol\theta)}}
+        = \frac{1}{1+\exp\big(-\boldsymbol\theta^\top\mathbf x(S_t)\big)},
+    \]
+    где на последнем шаге использовано условие
+    $h(s,1,\boldsymbol\theta)-h(s,0,\boldsymbol\theta)=\boldsymbol\theta^\top\mathbf x(s)$.
+    Соответственно $\pi(0\mid S_t,\boldsymbol\theta)=1-P_t$.
+
+    \textbf{(b)} Обновление совпадает с общим правилом REINFORCE (13.8) ---
+    специфика блока в него не входит и проявится лишь при раскрытии вектора
+    приемлемости в пункте~(c):
+    \[
+        \boldsymbol\theta_{t+1} \doteq \boldsymbol\theta_t
+        + \alpha\,\gamma^t G_t\,\nabla\ln\pi(A_t\mid S_t,\boldsymbol\theta_t),
+    \]
+    где $A_t\in\{0,1\}$ --- выход блока в момент $t$, $\mathbf x(S_t)$ --- его вход,
+    а $G_t$ --- доход, полученный до конца эпизода.
+
+    \textbf{(c)} Обозначим $P=\pi(1\mid s,\boldsymbol\theta)$. По правилу
+    дифференцирования сложной функции и свойству логистической функции
+    \[
+        \nabla_{\boldsymbol\theta} P = P(1-P)\,\mathbf x(s).
+    \]
+    Рассмотрим оба действия по отдельности. При $a=1$ имеем
+    $\ln\pi(1\mid s,\boldsymbol\theta)=\ln P$, откуда
+    \[
+        \nabla\ln\pi(1\mid s,\boldsymbol\theta)
+        = \frac{1}{P}\,\nabla_{\boldsymbol\theta}P
+        = \frac{P(1-P)}{P}\,\mathbf x(s) = (1-P)\,\mathbf x(s).
+    \]
+    При $a=0$ имеем $\ln\pi(0\mid s,\boldsymbol\theta)=\ln(1-P)$, откуда
+    \[
+        \nabla\ln\pi(0\mid s,\boldsymbol\theta)
+        = \frac{-1}{1-P}\,\nabla_{\boldsymbol\theta}P
+        = -\frac{P(1-P)}{1-P}\,\mathbf x(s) = -P\,\mathbf x(s).
+    \]
+    Так как $a$ принимает лишь значения 0 и 1, оба случая объединяются одним
+    выражением
+    \[
+        \nabla\ln\pi(a\mid s,\boldsymbol\theta)
+        = a(1-P)\,\mathbf x(s) + (a-1)P\,\mathbf x(s)
+        = \big(a - \pi(1\mid s,\boldsymbol\theta)\big)\,\mathbf x(s),
+    \]
+    поскольку $a-aP+aP-P=a-P$. Подстановка $a=1$ и $a=0$ возвращает найденные
+    выше частные случаи. Полученный вид согласуется со структурой (13.9):
+    вектор приемлемости есть произведение признаков состояния на отклонение
+    предпринятого действия от его математического ожидания
+    $\mathbb E[A_t]=\pi(1\mid s,\boldsymbol\theta)$. Подставляя результат в~(b),
+    получаем окончательное правило обновления
+    \[
+        \boldsymbol\theta_{t+1} \doteq \boldsymbol\theta_t
+        + \alpha\,\gamma^t G_t\,\big(A_t - \pi(1\mid S_t,\boldsymbol\theta_t)\big)\,\mathbf x(S_t).
+    \]
+\end{solution}

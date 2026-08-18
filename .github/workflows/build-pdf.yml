@@ -1,0 +1,74 @@
+name: Сборка PDF
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Собрать сборник
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверить, что оглавление README актуально
+        run: python3 tools/build_index.py --check
+
+      - name: Собрать сборник и главы
+        run: bash tools/build_pdf.sh
+
+      - name: Подготовить каталог для Pages
+        run: python3 tools/build_pages.py
+
+      - name: Сохранить PDF как артефакт сборки
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: solutions/build/*.pdf
+          if-no-files-found: error
+
+      - name: Сохранить каталог Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: solutions/build/site
+
+  publish:
+    name: Опубликовать
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - name: Выложить на GitHub Pages
+        id: pages
+        uses: actions/deploy-pages@v4
+
+      - name: Забрать собранные PDF
+        uses: actions/download-artifact@v4
+        with:
+          name: pdf
+          path: pdf
+
+      - name: Обновить релиз latest
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Последняя сборка
+          body: |
+            Автоматическая сборка сборника из ветки `main`, коммит ${{ github.sha }}.
+          files: pdf/*.pdf
+          make_latest: true

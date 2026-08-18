@@ -1,0 +1,4 @@
+*.ipynb linguist-documentation=false
+*.tex   text eol=lf
+*.py    text eol=lf
+*.png   binary

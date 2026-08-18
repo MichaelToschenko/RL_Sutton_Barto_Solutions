@@ -1,0 +1,41 @@
+% Преамбула сборника. Подключается из main.tex и из сборок отдельных глав.
+\usepackage[T2A]{fontenc}     % кодировка шрифтов
+\usepackage[utf8]{inputenc}   % кодировка исходного файла
+\usepackage[russian]{babel}   % поддержка русского
+\usepackage[a4paper,margin=1.2cm]{geometry}
+\usepackage{amsthm, amssymb}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{graphicx} % Required for inserting images
+% Иллюстрации разложены по происхождению, но в \includegraphics по-прежнему
+% указывается только имя файла.
+\graphicspath{{figures/book/}{figures/own/}}
+\usepackage{caption}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+% --- навигация по документу -------------------------------------------------
+% hyperref загружается до algorithm2e: обратный порядок ломает нумерацию
+% строк в окружении algorithm.
+\usepackage[unicode, hidelinks]{hyperref}
+\hypersetup{
+    bookmarksnumbered = true,
+    bookmarksopen     = true,
+    pdftitle          = {Ответы к книге «Обучение с подкреплением», Саттон и Барто},
+    pdfsubject        = {Решения упражнений},
+}
+
+\usepackage[ruled, linesnumbered]{algorithm2e}
+
+\captionsetup{labelformat=empty,hypcap=false}
+\emergencystretch=3em
+\hfuzz=30pt
+\hbadness=10000
+\sloppy
+
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+\newenvironment{solution}
+  {\begin{proof}[Решение]}
+  {\end{proof}}

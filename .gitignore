@@ -1,0 +1,18 @@
+# окружение
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+
+# сборка LaTeX
+solutions/build/
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# исходный архив-монолит, из которого вырос репозиторий
+RL_Satton_Barto-2.zip

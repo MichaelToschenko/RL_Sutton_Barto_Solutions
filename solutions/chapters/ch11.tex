@@ -1,0 +1,203 @@
+\section{Глава 11. *Методы с разделенной стратегией и аппроксимацией}
+
+\subsection{Упражнение 11.1(с. 307)}
+Преобразуйте уравнение (7.9) $n$-шагового TD-алгоритма с разделённой стратегией в
+полуградиентную форму. Приведите также определения дохода в эпизодическом и
+непрерывном случаях.
+\begin{equation}
+    V_{t+n}(S_t) \doteq V_{t+n-1}(S_t) + \alpha\,\rho_{t+1:t+n-1}
+    \big[G_{t:t+n} - V_{t+n-1}(S_t)\big], \qquad 0 \le t < T,
+    \tag{7.9}
+\end{equation}
+\begin{solution}
+    По тому же рецепту, что и в (11.2): обновление массива $V$ заменяем
+    обновлением весов $\mathbf w$, а приращение проецируем на $\nabla\hat v$.
+    Обновление весов принимает вид
+    \begin{equation*}
+        \mathbf w_{t+n} \doteq \mathbf w_{t+n-1} + \alpha\,\rho_{t+1:t+n-1}
+        \big[G_{t:t+n} - \hat v(S_t,\mathbf w_{t+n-1})\big]\nabla\hat v(S_t,\mathbf w_{t+n-1}),
+        \quad 0\le t<T,
+    \end{equation*}
+    где коэффициент выборки по значимости
+    \begin{equation*}
+        \rho_{t+1:t+n-1} = \prod_{i=t+1}^{\min(t+n-1,\,T-1)} \frac{\pi(A_i\mid S_i)}{b(A_i\mid S_i)}.
+    \end{equation*}
+
+    Доход в эпизодическом случае (с обесцениванием):
+    \begin{equation*}
+        G_{t:t+n} \doteq R_{t+1} + \gamma R_{t+2} + \dots + \gamma^{n-1} R_{t+n}
+        + \gamma^n \hat v(S_{t+n},\mathbf w_{t+n-1}), \qquad t+n < T,
+    \end{equation*}
+    и $G_{t:t+n} \doteq G_t$, если $t+n\ge T$.
+
+    Доход в непрерывном случае (среднее вознаграждение, без обесценивания):
+    \begin{equation*}
+        G_{t:t+n} \doteq \big(R_{t+1}-\bar R_{t+n-1}\big) + \big(R_{t+2}-\bar R_{t+n-1}\big)
+        + \dots + \big(R_{t+n}-\bar R_{t+n-1}\big) + \hat v(S_{t+n},\mathbf w_{t+n-1}),
+    \end{equation*}
+    то есть сумма дифференциальных наград за $n$ шагов плюс бутстрап $\hat
+    v(S_{t+n})$, без $\gamma$.
+\end{solution}
+
+\subsection{Упражнение 11.2(с. 307)}
+Преобразуйте уравнения (7.11) и (7.18) $n$-шагового $Q(\sigma)$ в полуградиентную
+форму. Приведите также определения, охватывающие как эпизодический, так и
+непрерывный случай.
+\begin{equation}
+    Q_{t+n}(S_t,A_t) \doteq Q_{t+n-1}(S_t,A_t)
+    + \alpha\,\rho_{t+1:t+n}\big[G_{t:t+n} - Q_{t+n-1}(S_t,A_t)\big]
+    \tag{7.11}
+\end{equation}
+\begin{equation}
+    \begin{aligned}
+    G_{t:h} \doteq{}& R_{t+1}
+    + \gamma\big(\sigma_{t+1}\rho_{t+1} + (1-\sigma_{t+1})\pi(A_{t+1}\mid S_{t+1})\big)
+      \big(G_{t+1:h} - Q_{h-1}(S_{t+1},A_{t+1})\big)\\
+    &+ \gamma\bar V_{h-1}(S_{t+1}).
+    \end{aligned}
+    \tag{7.18}
+\end{equation}
+\begin{solution}
+    Переводим в полуградиентную форму (массив $Q\to$ веса $\mathbf w$, приращение
+    на $\nabla\hat q$). В $Q(\sigma)$ вся выборка по значимости сидит \emph{внутри}
+    рекурсии дохода через коэффициент $\sigma_k\rho_k+(1-\sigma_k)\pi$, поэтому во
+    внешнем обновлении весов множителя $\rho$ нет (иначе получилась бы двойная
+    коррекция).
+
+    Обновление весов:
+    \begin{equation*}
+        \mathbf w_{t+n} \doteq \mathbf w_{t+n-1}
+        + \alpha\big[G_{t:t+n} - \hat q(S_t,A_t,\mathbf w_{t+n-1})\big]
+        \nabla\hat q(S_t,A_t,\mathbf w_{t+n-1}).
+    \end{equation*}
+
+    Доход, эпизодический случай (с обесцениванием):
+    \begin{equation*}
+        \begin{aligned}
+        G_{t:h} \doteq{}& R_{t+1}
+        + \gamma\big(\sigma_{t+1}\rho_{t+1} + (1-\sigma_{t+1})\pi(A_{t+1}\mid S_{t+1})\big)
+          \big(G_{t+1:h} - \hat q(S_{t+1},A_{t+1},\mathbf w_{t+n-1})\big)\\
+        &+ \gamma\bar V_{h-1}(S_{t+1}),
+        \end{aligned}
+    \end{equation*}
+    где ожидаемая ценность выражена через аппроксимацию (аналог (7.8)):
+    \begin{equation*}
+        \bar V_{h-1}(S_{t+1}) = \sum_a \pi(a\mid S_{t+1})\,\hat q(S_{t+1},a,\mathbf w_{t+n-1}).
+    \end{equation*}
+
+    Доход, непрерывный случай (среднее вознаграждение, без обесценивания): убираем
+    $\gamma$ во всех местах и заменяем $R_{t+1}$ на $R_{t+1}-\bar R$:
+    \begin{equation*}
+        \begin{aligned}
+        G_{t:h} \doteq{}& \big(R_{t+1}-\bar R\big)
+        + \big(\sigma_{t+1}\rho_{t+1} + (1-\sigma_{t+1})\pi(A_{t+1}\mid S_{t+1})\big)
+          \big(G_{t+1:h} - \hat q(S_{t+1},A_{t+1},\mathbf w_{t+n-1})\big)\\
+        &+ \bar V_{h-1}(S_{t+1}).
+        \end{aligned}
+    \end{equation*}
+
+    Рекурсия заканчивается на $G_{h:h}\doteq \hat q(S_h,A_h,\mathbf w_{t+n-1})$ при
+    $h<T$ или на $G_{T-1:T}\doteq R_T$ при $h=T$ (здесь $h=t+n$).
+
+    Две замены табличного на аппроксимацию: $Q_{h-1}(S_{t+1},A_{t+1})\to\hat
+    q(S_{t+1},A_{t+1},\mathbf w)$ и $\bar V_{h-1}(S_{t+1})\to\sum_a\pi(a\mid
+    S_{t+1})\hat q(S_{t+1},a,\mathbf w)$ (ожидание по $\pi$, а не одно действие).
+    Коэффициент $\sigma_k\rho_k+(1-\sigma_k)\pi$ интерполирует между сэмплированием
+    ($\sigma=1$: чистый importance sampling, сворачивается в наружное
+    $\rho_{t+1:t+n}$ из (7.11)) и ожиданием ($\sigma=0$: tree-backup, $\rho$
+    исчезает).
+\end{solution}
+
+\subsection{Упражнение 11.3(с. 311)}
+Примените одношаговое полуградиентное Q-обучение к контрпримеру Бэрда и эмпирически покажите, что веса в этом случае расходятся.
+
+\begin{solution}
+    \textbf{Код смотри в отдельном файле репозитория.}
+    Контрпример Бэрда: 7 состояний (6 верхних и 7-е), 2 действия (solid ведёт в
+    7-е состояние, dashed --- в случайное верхнее), награда всюду $0$,
+    $\gamma=0.99$. Поведенческая стратегия $b$ берёт dashed с вероятностью $6/7$ и
+    solid с $1/7$ (даёт равномерное посещение). Линейная аппроксимация на восьми
+    весах со структурой признаков Бэрда: ценность solid равна $w_7+2w_8$, ценность
+    dashed из верхнего состояния $i$ равна $2w_i+w_8$; общий вес $w_8$ входит во
+    все состояния. Обновление --- одношаговое Q-обучение $\mathbf w \leftarrow
+    \mathbf w + \alpha\big[\gamma\max_a \hat q(S',a) - \hat q(S,A)\big]\nabla\hat
+    q(S,A)$ (без коэффициента выборки по значимости: цель строится по жадному
+    действию напрямую). Начальные веса $\mathbf w=(1,1,1,1,1,1,10,1)$, $\alpha=0.01$.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\textwidth]{fig_sol_11_3.png}
+        \caption*{Эволюция весов при Q-обучении на контрпримере Бэрда.}
+    \end{figure}
+
+    Веса расходятся, как на рис.~11.2: $w_8$ взлетает (за $1000$ шагов до
+    $\approx 190$, а к $5000$ шагам --- порядка $10^5$), $w_1..w_6$ растут, $w_7$
+    остаётся сравнительно ограниченным. Рост неограниченный и не зависит от
+    $\alpha>0$.
+
+    Механизм --- смертельная триада. Из-за начального $w_7=10$ ценность 7-го
+    состояния велика, поэтому $\max_a$ устойчиво указывает на solid, и цель всех
+    обновлений бутстрапит на $\hat q(\cdot,\text{solid})=w_7+2w_8$. Обновления идут
+    по off-policy распределению $b$ (в $6/7$ случаев --- на верхних состояниях, где
+    dashed поднимает общий $w_8$). Но $w_8$ входит в саму цель с коэффициентом $2$,
+    поэтому цель убегает вверх быстрее, чем за ней подтягиваются оценки: положительная
+    обратная связь. Компенсирующих обновлений (которые вернули бы $\hat q(7)$ на
+    место) поведенческая стратегия почти не даёт --- отсюда расходимость. Убрать
+    любой элемент триады (аппроксимацию, бутстрэппинг или off-policy распределение)
+    --- и веса сходятся.
+\end{solution}
+
+\subsection{*Упражнение 11.4(с. 324)}
+Докажите тождество (11.24):
+\begin{equation}
+    \overline{RE}(\mathbf w) = \mathbb E\big[(G_t - \hat v(S_t,\mathbf w))^2\big]
+    = \overline{VE}(\mathbf w) + \mathbb E\big[(G_t - v_\pi(S_t))^2\big].
+    \tag{11.24}
+\end{equation}
+
+\begin{solution}
+    Обозначения: $\mathbb E[\,\cdot\mid S_t=s]$ --- усреднение по случайности дохода
+    $G_t$ при фиксированном $s$; безусловное матожидание раскрывается по закону
+    полного матожидания $\mathbb E[X]=\sum_s\mu(s)\,\mathbb E[X\mid S_t=s]$.
+    Пользуемся тем, что при фиксированном $s$ величины $\hat v(s,\mathbf w)$ и
+    $v_\pi(s)$ --- константы, а $\mathbb E[G_t\mid S_t=s]=v_\pi(s)$ по определению
+    истинной ценности.
+
+    Раскрываем $\overline{RE}$ в условное матожидание:
+    \begin{equation*}
+        \overline{RE}(\mathbf w) = \sum_s \mu(s)\,
+        \mathbb E\big[(G_t - \hat v(s,\mathbf w))^2 \mid S_t=s\big].
+    \end{equation*}
+    Добавляем и вычитаем $v_\pi(s)$ и группируем:
+    \begin{equation*}
+        G_t - \hat v(s,\mathbf w) = \underbrace{\big(G_t - v_\pi(s)\big)}_{A}
+        + \underbrace{\big(v_\pi(s) - \hat v(s,\mathbf w)\big)}_{B},
+    \end{equation*}
+    где при фиксированном $s$ величина $A$ случайна (зависит от $G_t$), а $B$ ---
+    константа. Раскрываем квадрат под условным матожиданием:
+    \begin{equation*}
+        \mathbb E\big[(A+B)^2 \mid s\big]
+        = \mathbb E[A^2\mid s] + 2\,\mathbb E[AB\mid s] + \mathbb E[B^2\mid s].
+    \end{equation*}
+
+    Разбираем члены. Так как $B$ --- константа при данном $s$:
+    \begin{align*}
+        \mathbb E[B^2\mid s] &= \big(v_\pi(s) - \hat v(s,\mathbf w)\big)^2,\\
+        2\,\mathbb E[AB\mid s] &= 2B\,\mathbb E[A\mid s]
+        = 2B\big(\underbrace{\mathbb E[G_t\mid S_t=s]}_{=\,v_\pi(s)} - v_\pi(s)\big) = 0.
+    \end{align*}
+    Перекрёстный член зануляется не из-за независимости, а потому что $B$
+    выносится как константа, а $\mathbb E[A\mid s]=0$. Остаётся
+    \begin{equation*}
+        \mathbb E\big[(G_t - \hat v(s,\mathbf w))^2 \mid s\big]
+        = \big(v_\pi(s) - \hat v(s,\mathbf w)\big)^2
+        + \mathbb E\big[(G_t - v_\pi(s))^2 \mid s\big].
+    \end{equation*}
+
+    Возвращаем внешнее усреднение $\sum_s\mu(s)$:
+    \begin{equation*}
+        \overline{RE}(\mathbf w)
+        = \underbrace{\sum_s \mu(s)\big(v_\pi(s) - \hat v(s,\mathbf w)\big)^2}_{\overline{VE}(\mathbf w)}
+        + \underbrace{\sum_s \mu(s)\,\mathbb E\big[(G_t - v_\pi(s))^2\mid S_t=s\big]}_{\mathbb E[(G_t - v_\pi(S_t))^2]}.
+    \end{equation*}
+\end{solution}

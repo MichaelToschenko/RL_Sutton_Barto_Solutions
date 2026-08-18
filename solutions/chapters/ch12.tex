@@ -1,0 +1,658 @@
+\section{Глава 12. Следы приемлемости}
+
+\subsection{Упражнение 12.1(с. 340)}
+Доход можно выразить рекуррентно через первое вознаграждение и доход на следующем
+шаге (3.9), и то же самое справедливо в отношении $\lambda$-дохода. Выведите
+аналогичное рекуррентное соотношение из формул (12.2) и (12.1).
+\begin{equation}
+    G_{t:t+n} \doteq R_{t+1} + \gamma R_{t+2} + \dots + \gamma^{n-1} R_{t+n}
+    + \gamma^n \hat v(S_{t+n}, \mathbf w_{t+n-1}), \qquad 0 \le t \le T-n.
+    \tag{12.1}
+\end{equation}
+\begin{equation}
+    G_t^\lambda \doteq (1-\lambda) \sum_{n=1}^\infty \lambda^{n-1} G_{t:t+n}.
+    \tag{12.2}
+\end{equation}
+\begin{solution}
+    Начинаем с (12.2) и отделяем член $n=1$:
+    \begin{equation*}
+        G_t^\lambda = (1-\lambda)\sum_{n=1}^\infty \lambda^{n-1} G_{t:t+n}
+        = (1-\lambda)G_{t:t+1} + (1-\lambda)\sum_{n=2}^\infty \lambda^{n-1} G_{t:t+n}.
+    \end{equation*}
+
+    Первый член по (12.1) при $n=1$ есть $G_{t:t+1}=R_{t+1}+\gamma\hat v(S_{t+1},\mathbf w_t)$, то есть
+    \begin{equation*}
+        (1-\lambda)G_{t:t+1} = (1-\lambda)\big(R_{t+1}+\gamma\hat v(S_{t+1},\mathbf w_t)\big).
+    \end{equation*}
+
+    В хвосте $n\ge 2$ раскладываем $G_{t:t+n}=R_{t+1}+\gamma\,G_{t+1:t+n}$ и разбиваем на две суммы. Часть с $R_{t+1}$:
+    \begin{equation*}
+        (1-\lambda)R_{t+1}\sum_{n=2}^\infty \lambda^{n-1}
+        = (1-\lambda)R_{t+1}\cdot\frac{\lambda}{1-\lambda} = \lambda R_{t+1}.
+    \end{equation*}
+    Часть с $\gamma G_{t+1:t+n}$ после сдвига $m=n-1$ сворачивается в $\lambda$-доход момента $t+1$:
+    \begin{equation*}
+        (1-\lambda)\gamma\sum_{n=2}^\infty \lambda^{n-1} G_{t+1:t+n}
+        = \gamma\lambda\,\underbrace{(1-\lambda)\sum_{m=1}^\infty \lambda^{m-1} G_{t+1:(t+1)+m}}_{=\,G_{t+1}^\lambda}
+        = \gamma\lambda\,G_{t+1}^\lambda.
+    \end{equation*}
+
+    Складываем три куска; слагаемые $(1-\lambda)R_{t+1}$ и $\lambda R_{t+1}$ дают $R_{t+1}$:
+    \begin{equation*}
+        G_t^\lambda = R_{t+1} + \gamma\Big[(1-\lambda)\hat v(S_{t+1},\mathbf w_t) + \lambda\,G_{t+1}^\lambda\Big].
+    \end{equation*}
+
+    Смысл рекурсии: на следующем шаге $\lambda$-доход с весом $\lambda$ продолжает
+    бутстрапить дальше (через $G_{t+1}^\lambda$), а с весом $1-\lambda$
+    обрывается на оценку $\hat v(S_{t+1},\mathbf w_t)$. Проверка предельными
+    случаями: при $\lambda=1$ получаем $G_t^\lambda=R_{t+1}+\gamma G_{t+1}^\lambda$
+    (рекурсия дохода Монте-Карло (3.9)), при $\lambda=0$ ---
+    $G_t^\lambda=R_{t+1}+\gamma\hat v(S_{t+1},\mathbf w_t)$ (одношаговый TD-таргет).
+\end{solution}
+
+\subsection{Упражнение 12.2(с. 340)}
+Параметр $\lambda$ характеризует скорость экспоненциального убывания весов на
+рис.~2.2, а значит, то, насколько далеко в будущее заглядывает $\lambda$-доходный
+алгоритм при вычислении обновления. Но коэффициенты типа $\lambda$ --- не всегда
+удачный способ описать скорость убывания. Иногда лучше задавать временную
+постоянную, или время полужизни. Напишите уравнение, связывающее $\lambda$ и время
+полужизни $T_\lambda$, т.\,е. время, за которое вес снизится до половины
+начального значения.
+
+\begin{solution}
+    Веса $n$-шаговых доходов в $\lambda$-доходе суть $w_n=(1-\lambda)\lambda^{n-1}$;
+    экспоненциально убывающая часть --- $\lambda^{n-1}$ (общий множитель $1-\lambda$
+    в отношении сократится). Моделируя вес непрерывно как $\lambda^{\tau}$,
+    определяем полужизнь $T_\lambda$ из условия «вес упал вдвое»:
+    \begin{equation*}
+        \lambda^{T_\lambda} = \tfrac12.
+    \end{equation*}
+    Логарифмируя обе части и переходя к натуральному логарифму:
+    \begin{equation*}
+        T_\lambda = -\log_\lambda 2 = -\frac{\ln 2}{\ln\lambda} = \frac{\ln 2}{\ln(1/\lambda)}.
+    \end{equation*}
+    Последняя запись нагляднее: при $\lambda\in(0,1)$ знаменатель $\ln(1/\lambda)>0$,
+    поэтому $T_\lambda>0$.
+
+    Проверка предельными случаями: при $\lambda\to 1^-$ имеем $T_\lambda\to+\infty$
+    (Монте-Карло, доход заглядывает бесконечно далеко), при $\lambda\to 0^+$ ---
+    $T_\lambda\to 0$ (одношаговый TD, заглядывания вперёд почти нет).
+\end{solution}
+
+\subsection{Упражнение 12.3(с. 346)}
+Получить более полное представление о том, насколько хорошо TD($\lambda$) может
+аппроксимировать офлайновый $\lambda$-доходный алгоритм, можно, заметив, что член
+ошибки в последнем (выражение в квадратных скобках в (12.4)) можно записать в
+виде суммы TD-ошибок (12.6) для одного фиксированного $\mathbf w$. Докажите это,
+следуя образцу (6.6) и воспользовавшись рекуррентным соотношением для
+$\lambda$-дохода, которое вы вывели, решая упражнение 12.1.
+
+Офлайновый $\lambda$-доходный алгоритм (12.4):
+\begin{equation}
+    \mathbf w_{t+1} \doteq \mathbf w_t + \alpha\big[G_t^\lambda - \hat v(S_t,\mathbf w_t)\big]\nabla\hat v(S_t,\mathbf w_t),
+    \qquad t = 0,\dots,T-1.
+    \tag{12.4}
+\end{equation}
+TD-ошибка (12.6):
+\begin{equation}
+    \delta_t \doteq R_{t+1} + \gamma\hat v(S_{t+1},\mathbf w_t) - \hat v(S_t,\mathbf w_t).
+    \tag{12.6}
+\end{equation}
+Образец --- табличное тождество (6.6):
+\begin{equation}
+    G_t - V(S_t) = \sum_{k=t}^{T-1} \gamma^{k-t}\,\delta_k.
+    \tag{6.6}
+\end{equation}
+Рекуррентное соотношение для $\lambda$-дохода (из упражнения 12.1):
+\begin{equation*}
+    G_t^\lambda = R_{t+1} + \gamma(1-\lambda)\hat v(S_{t+1},\mathbf w) + \gamma\lambda\,G_{t+1}^\lambda.
+\end{equation*}
+
+\begin{solution}
+    Веса фиксированы, поэтому пишем $\hat v(\cdot)$ без индекса шага, а $\delta_k =
+    R_{k+1}+\gamma\hat v(S_{k+1})-\hat v(S_k)$. Обозначим член ошибки $E_t \doteq
+    G_t^\lambda - \hat v(S_t)$.
+
+    Вычитаем $\hat v(S_t)$ из рекурсии $\lambda$-дохода:
+    \begin{equation*}
+        E_t = R_{t+1} + \gamma(1-\lambda)\hat v(S_{t+1}) - \hat v(S_t) + \gamma\lambda\,G_{t+1}^\lambda.
+    \end{equation*}
+    По образцу (6.6) добавляем и вычитаем $\gamma\lambda\hat v(S_{t+1})$, чтобы
+    выделить TD-ошибку. Используем $\gamma(1-\lambda)\hat v(S_{t+1}) = \gamma\hat
+    v(S_{t+1}) - \gamma\lambda\hat v(S_{t+1})$:
+    \begin{equation*}
+        R_{t+1} + \gamma(1-\lambda)\hat v(S_{t+1}) - \hat v(S_t)
+        = \underbrace{R_{t+1} + \gamma\hat v(S_{t+1}) - \hat v(S_t)}_{\delta_t}
+          - \gamma\lambda\hat v(S_{t+1}).
+    \end{equation*}
+    Подставляя обратно и группируя, получаем рекурсию для ошибки:
+    \begin{equation*}
+        E_t = \delta_t + \gamma\lambda\big(G_{t+1}^\lambda - \hat v(S_{t+1})\big)
+        = \delta_t + \gamma\lambda\,E_{t+1}.
+    \end{equation*}
+    Раскручивая её (как в (6.6)) и учитывая, что в конце эпизода $E_T=0$, а
+    $\delta_k=0$ при $k\ge T$:
+    \begin{equation*}
+        E_t = \delta_t + \gamma\lambda\,\delta_{t+1} + (\gamma\lambda)^2\delta_{t+2} + \dots
+        = \sum_{k=t}^{T-1} (\gamma\lambda)^{k-t}\,\delta_k.
+    \end{equation*}
+    То есть
+    \begin{equation*}
+        G_t^\lambda - \hat v(S_t) = \sum_{k=t}^{T-1} (\gamma\lambda)^{k-t}\,\delta_k.
+    \end{equation*}
+
+    Два замечания. Тождество держится только при фиксированном $\mathbf w$: иначе
+    $\delta_k$ считались бы через разные $\mathbf w_k$, добавленное и вычтенное
+    $\hat v(S_{t+1})$ не сократились бы. Именно поэтому TD($\lambda$) лишь
+    приближает офлайновый $\lambda$-доход --- онлайн $\mathbf w$ меняется внутри
+    эпизода. В отличие от (6.6) множитель здесь $(\gamma\lambda)^{k-t}$, а не
+    $\gamma^{k-t}$: лишний $\lambda$ приходит из коэффициента $\gamma\lambda$ при
+    рекурсивном члене --- тот же темп затухания, что у следа приемлемости
+    $\mathbf z_t$.
+\end{solution}
+
+\subsection{Упражнение 12.4(с. 346)}
+Воспользуйтесь результатом предыдущего упражнения, чтобы показать, что если бы
+обновления весов в эпизоде вычислялись на каждом шаге, но не использовались для
+изменения весов ($\mathbf w$ оставался бы фиксированным), то сумма обновлений
+весов в TD($\lambda$) была бы такой же, как сумма обновлений в офлайновом
+$\lambda$-доходном алгоритме.
+
+\begin{solution}
+    Веса фиксированы, шаг $\alpha$ вынесем. Надо показать равенство суммарных
+    обновлений за эпизод.
+
+    Офлайновый $\lambda$-доход (12.4), с подстановкой результата упражнения 12.3
+    $G_t^\lambda-\hat v(S_t)=\sum_{k=t}^{T-1}(\gamma\lambda)^{k-t}\delta_k$:
+    \begin{equation*}
+        \mathrm{L} = \sum_{t=0}^{T-1}\alpha\big[G_t^\lambda-\hat v(S_t)\big]\nabla\hat v(S_t)
+        = \alpha\sum_{t=0}^{T-1}\sum_{k=t}^{T-1}(\gamma\lambda)^{k-t}\,\delta_k\,\nabla\hat v(S_t).
+    \end{equation*}
+
+    TD($\lambda$) (12.7) со следом (12.5), развёрнутым как $\mathbf z_t=\sum_{k=0}^{t}(\gamma\lambda)^{t-k}\nabla\hat v(S_k)$:
+    \begin{equation*}
+        \mathrm{R} = \sum_{t=0}^{T-1}\alpha\,\delta_t\,\mathbf z_t
+        = \alpha\sum_{t=0}^{T-1}\sum_{k=0}^{t}(\gamma\lambda)^{t-k}\,\delta_t\,\nabla\hat v(S_k).
+    \end{equation*}
+
+    В $\mathrm{R}$ переименуем индексы $t\leftrightarrow k$ (внешний назовём $k$, внутренний $t$):
+    \begin{equation*}
+        \mathrm{R} = \alpha\sum_{k=0}^{T-1}\sum_{t=0}^{k}(\gamma\lambda)^{k-t}\,\delta_k\,\nabla\hat v(S_t).
+    \end{equation*}
+    Теперь обе суммы идут по одному треугольному множеству индексов
+    $\{(t,k):0\le t\le k\le T-1\}$ с одинаковым слагаемым $(\gamma\lambda)^{k-t}\delta_k\nabla\hat v(S_t)$.
+    $\mathrm{L}$ суммирует его по строкам (фиксирован $t$, бежит $k\ge t$), $\mathrm{R}$ ---
+    по столбцам (фиксирован $k$, бежит $t\le k$); сумма всех элементов одна, поэтому
+    \begin{equation*}
+        \mathrm{L} = \mathrm{R},
+    \end{equation*}
+    то есть суммарные обновления совпадают.
+
+    Всё держится на фиксированном $\mathbf w$: иначе $\delta_k$ и $\nabla\hat v$ на
+    разных шагах вычислялись бы через разные $\mathbf w_t$, слагаемые не совпали бы,
+    и перестановка порядка суммирования не дала бы тождества. Поэтому равенство
+    суммарных обновлений точное лишь при неизменных весах --- при онлайновом
+    изменении $\mathbf w$ TD($\lambda$) только приближает офлайновый
+    $\lambda$-доходный алгоритм.
+\end{solution}
+
+\subsection{Упражнение 12.5(с. 347)}
+Мы уже несколько раз (часто в упражнениях) устанавливали, что доход можно
+записать в виде суммы TD-ошибок, если функция ценности остаётся постоянной.
+Почему (12.10) является ещё одним примером такого рода? Докажите тождество
+(12.10).
+
+Усечённый $\lambda$-доход (12.10) с TD-ошибкой
+\begin{equation}
+    G_{t:t+k}^\lambda = \hat v(S_t,\mathbf w_{t-1})
+    + \sum_{i=t}^{t+k-1} (\gamma\lambda)^{i-t}\,\delta_i',
+    \qquad
+    \delta_i' \doteq R_{i+1} + \gamma\hat v(S_{i+1},\mathbf w_i) - \hat v(S_i,\mathbf w_{i-1}).
+    \tag{12.10}
+\end{equation}
+
+\begin{solution}
+    Обозначим ошибку $E_{t:t+k}\doteq G_{t:t+k}^\lambda - \hat v(S_t,\mathbf w_{t-1})$.
+
+    Усечённый $\lambda$-доход подчиняется той же рекурсии, что и в упражнении 12.1,
+    с укороченным на шаг горизонтом:
+    \begin{equation*}
+        G_{t:t+k}^\lambda = R_{t+1} + \gamma(1-\lambda)\hat v(S_{t+1},\mathbf w_t)
+        + \gamma\lambda\,G_{t+1:t+k}^\lambda.
+    \end{equation*}
+    Вычитаем $\hat v(S_t,\mathbf w_{t-1})$ и расщепляем $\gamma\hat v(S_{t+1},\mathbf w_t)
+    = \gamma\lambda\hat v(S_{t+1},\mathbf w_t) + \gamma(1-\lambda)\hat v(S_{t+1},\mathbf w_t)$,
+    чтобы выделить $\delta_t'$:
+    \begin{equation*}
+        R_{t+1} + \gamma(1-\lambda)\hat v(S_{t+1},\mathbf w_t) - \hat v(S_t,\mathbf w_{t-1})
+        = \underbrace{R_{t+1} + \gamma\hat v(S_{t+1},\mathbf w_t) - \hat v(S_t,\mathbf w_{t-1})}_{\delta_t'}
+          - \gamma\lambda\hat v(S_{t+1},\mathbf w_t).
+    \end{equation*}
+    Подставляя, получаем рекурсию для ошибки:
+    \begin{equation*}
+        E_{t:t+k} = \delta_t' + \gamma\lambda\big(G_{t+1:t+k}^\lambda - \hat v(S_{t+1},\mathbf w_t)\big)
+        = \delta_t' + \gamma\lambda\,E_{t+1:t+k}.
+    \end{equation*}
+    Вычитаемое $\hat v(S_{t+1},\mathbf w_t)$ имеет ровно тот индекс весов, что и в
+    определении $E_{t+1:t+k}$, так что члены согласованы. База рекурсии:
+    $E_{t+k:t+k}=0$ (усечённый доход нулевой длины равен бутстрапу $\hat
+    v(S_{t+k},\mathbf w_{t+k-1})$). Раскручивая:
+    \begin{equation*}
+        E_{t:t+k} = \sum_{i=t}^{t+k-1} (\gamma\lambda)^{i-t}\,\delta_i',
+        \qquad\text{откуда}\qquad
+        G_{t:t+k}^\lambda = \hat v(S_t,\mathbf w_{t-1}) + \sum_{i=t}^{t+k-1} (\gamma\lambda)^{i-t}\,\delta_i'.
+    \end{equation*}
+\end{solution}
+
+\subsection{Упражнение 12.6(с. 357)}
+Модифицируйте псевдокод алгоритма Sarsa($\lambda$) так, чтобы использовать
+голландские следы (12.11) и никаких других особенностей истинно онлайнового
+алгоритма. Предполагайте, что аппроксимация функций линейна, а признаки бинарны.
+\begin{equation}
+    \mathbf z_t \doteq \gamma\lambda\,\mathbf z_{t-1}
+    + \big(1 - \alpha\gamma\lambda\,\mathbf z_{t-1}^\top \mathbf x_t\big)\mathbf x_t,
+    \tag{12.11}
+\end{equation}
+\begin{solution}
+    Истинно онлайновый Sarsa($\lambda$) отличается от обычного двумя неразрывными
+    элементами: голландским следом (12.11) вместо накопительного/замещающего и
+    поправкой на изменение оценки текущего действия через $Q_{old}$ (оценку
+    выбранного действия по весам \emph{до} их обновления). Для бинарных признаков
+    $\mathbf w^\top\mathbf x = \sum_{i\in\mathcal F(S,A)} w_i$ и $\mathbf z^\top\mathbf x
+    = \sum_{i\in\mathcal F(S,A)} z_i$.
+
+    \begin{algorithm}[H]
+        \DontPrintSemicolon
+        \SetKwInOut{Input}{Вход}
+        \SetKwInOut{Param}{Параметры}
+        \Input{функция $\mathcal F(s,a)$ (индексы активных признаков); стратегия $\pi$ (если оценивается $q_\pi$)}
+        \Param{размер шага $\alpha>0$, скорость затухания следа $\lambda\in[0,1]$}
+        Инициализировать $\mathbf w\in\mathbb R^d$ произвольно (например, $\mathbf w=\mathbf 0$)\;
+        \For{\textnormal{каждого эпизода}}{
+            Инициализировать $S$; выбрать $A\sim\pi(\cdot\mid S)$ или $\varepsilon$-жадно по $\hat q(S,\cdot,\mathbf w)$\;
+            $\mathbf x\leftarrow \mathbf x(S,A)$ \tcp*{бинарный вектор признаков пары $(S,A)$}
+            $\mathbf z\leftarrow \mathbf 0$;\quad $Q_{old}\leftarrow 0$\;
+            \Repeat{$S'$ \textnormal{заключительное}}{
+                Предпринять действие $A$; наблюдать $R,S'$\;
+                Выбрать $A'\sim\pi(\cdot\mid S')$ или $\varepsilon$-жадно по $\hat q(S',\cdot,\mathbf w)$\;
+                $\mathbf x'\leftarrow \mathbf x(S',A')$ \tcp*{$\mathbf 0$, если $S'$ заключительное}
+                $Q\leftarrow \mathbf w^\top\mathbf x$;\quad $Q'\leftarrow \mathbf w^\top\mathbf x'$\;
+                $\delta\leftarrow R+\gamma Q'-Q$\;
+                $\mathbf z\leftarrow \gamma\lambda\,\mathbf z+\big(1-\alpha\gamma\lambda\,\mathbf z^\top\mathbf x\big)\mathbf x$ \tcp*{голландский след (12.11)}
+                $\mathbf w\leftarrow \mathbf w+\alpha(\delta+Q-Q_{old})\,\mathbf z-\alpha(Q-Q_{old})\,\mathbf x$\;
+                $Q_{old}\leftarrow Q'$\;
+                $\mathbf x\leftarrow \mathbf x'$;\quad $A\leftarrow A'$\;
+            }
+        }
+    \end{algorithm}
+
+    Пояснения. Скаляр $\mathbf z^\top\mathbf x$ в строке следа вычисляется по $\mathbf z$
+    \emph{до} присваивания (роль $\mathbf z_{t-1}$), а затухание $\gamma\lambda$
+    включено в ту же строку --- поэтому оба множителя $\gamma\lambda$ стоят явно, и
+    отдельной строки затухания в конце шага нет. Обновление весов эквивалентно
+    $\mathbf w\leftarrow \mathbf w+\alpha\delta\mathbf z+\alpha(Q-Q_{old})(\mathbf z-\mathbf x)$:
+    первый член --- как в обычном Sarsa($\lambda$), второй компенсирует изменение
+    оценки текущего действия за такт. $Q_{old}$ хранит оценку выбранного действия
+    $A'$ (которое станет текущим на следующем шаге), снятую по весам до их
+    обновления. Для бинарных признаков произведения $\mathbf w^\top\mathbf x$,
+    $\mathbf w^\top\mathbf x'$, $\mathbf z^\top\mathbf x$ --- это суммы соответствующих
+    компонент по активным индексам из $\mathcal F$.
+\end{solution}
+
+\subsection{Упражнение 12.7(с. 360)}
+Обобщите все три приведённых выше рекуррентных соотношения на усечённые версии,
+определив $G_{t:h}^{\lambda s}$ и $G_{t:h}^{\lambda a}$.
+
+\begin{solution}
+    В каждую из рекурсий (12.18)--(12.20) добавляем горизонт усечения $h$ (как
+    (12.9) к обычному $\lambda$-доходу): вложенный доход становится усечённым тем
+    же горизонтом, а на $t=h$ рекурсия обрывается на бутстрап-оценку (переменные
+    $\lambda_{t+1}$ и $\gamma_{t+1}$ сохраняются).
+
+    Доход для состояний:
+    \begin{align*}
+        G_{t:h}^{\lambda s} &\doteq R_{t+1} + \gamma_{t+1}\Big((1-\lambda_{t+1})\hat v(S_{t+1},\mathbf w_t) + \lambda_{t+1}\,G_{t+1:h}^{\lambda s}\Big), \qquad t<h,\\
+        G_{h:h}^{\lambda s} &\doteq \hat v(S_h,\mathbf w_{h-1}).
+    \end{align*}
+
+    Доход для действий (Sarsa) --- $\hat q$ вместо $\hat v$:
+    \begin{align*}
+        G_{t:h}^{\lambda a} &\doteq R_{t+1} + \gamma_{t+1}\Big((1-\lambda_{t+1})\hat q(S_{t+1},A_{t+1},\mathbf w_t) + \lambda_{t+1}\,G_{t+1:h}^{\lambda a}\Big), \qquad t<h,\\
+        G_{h:h}^{\lambda a} &\doteq \hat q(S_h,A_h,\mathbf w_{h-1}).
+    \end{align*}
+
+    Доход для действий (Expected Sarsa) --- бутстрап через ожидание $\bar V_t(S_{t+1})=\sum_a \pi(a\mid S_{t+1})\hat q(S_{t+1},a,\mathbf w_t)$:
+    \begin{align*}
+        G_{t:h}^{\lambda a} &\doteq R_{t+1} + \gamma_{t+1}\Big((1-\lambda_{t+1})\bar V_t(S_{t+1}) + \lambda_{t+1}\,G_{t+1:h}^{\lambda a}\Big), \qquad t<h,\\
+        G_{h:h}^{\lambda a} &\doteq \bar V_{h-1}(S_h).
+    \end{align*}
+
+    Проверка: при $h=t+1$ каждая рекурсия сворачивается в соответствующий
+    одношаговый таргет ($R_{t+1}+\gamma_{t+1}\hat v(S_{t+1},\mathbf w_t)$ и
+    аналогично для $\hat q$, $\bar V$) независимо от $\lambda_{t+1}$.
+\end{solution}
+
+\subsection{Упражнение 12.8(с. 361)}
+Докажите, что приближённое равенство (12.24) становится точным, если функция
+ценности не изменяется. Для сокращения записи рассмотрите случай $t=0$ и
+воспользуйтесь нотацией $V_k \doteq \hat v(S_k,\mathbf w)$.
+\begin{equation}
+    G_0^{\lambda s} - V_0 = \sum_{k=0}^{\infty}\Big(\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i\Big)\rho_k\,\delta_k^s,
+    \qquad \delta_k^s = R_{k+1} + \gamma_{k+1}V_{k+1} - V_k.
+    \tag{12.24}
+\end{equation}
+\begin{solution}
+    Веса фиксированы, поэтому $V_k=\hat v(S_k,\mathbf w)$ и $\delta_k^s$ не зависят
+    от шага обновления. Обозначим $E_t \doteq G_t^{\lambda s} - V_t$.
+
+    Берём (12.22) и вычитаем $V_t$. Член $(1-\rho_t)V_t$ вместе с $-V_t$ даёт
+    $-\rho_t V_t$, поэтому
+    \begin{equation*}
+        E_t = \rho_t\big(R_{t+1} + \gamma_{t+1}((1-\lambda_{t+1})V_{t+1} + \lambda_{t+1}G_{t+1}^{\lambda s})\big) - \rho_t V_t.
+    \end{equation*}
+    Расщепляем $\gamma_{t+1}V_{t+1} = \gamma_{t+1}\lambda_{t+1}V_{t+1} + \gamma_{t+1}(1-\lambda_{t+1})V_{t+1}$,
+    чтобы выделить $\delta_t^s$:
+    \begin{equation*}
+        R_{t+1} + \gamma_{t+1}(1-\lambda_{t+1})V_{t+1} - V_t
+        = \underbrace{R_{t+1} + \gamma_{t+1}V_{t+1} - V_t}_{\delta_t^s} - \gamma_{t+1}\lambda_{t+1}V_{t+1}.
+    \end{equation*}
+    Подставляя, получаем рекурсию для ошибки:
+    \begin{equation*}
+        E_t = \rho_t\,\delta_t^s + \rho_t\gamma_{t+1}\lambda_{t+1}\big(G_{t+1}^{\lambda s} - V_{t+1}\big)
+        = \rho_t\,\delta_t^s + \rho_t\gamma_{t+1}\lambda_{t+1}\,E_{t+1}.
+    \end{equation*}
+
+    Раскручиваем от $t=0$. Каждый шаг вносит множитель $\rho_t\gamma_{t+1}\lambda_{t+1}$,
+    а в самом $E_{t+1}$ перед $\delta_{t+1}^s$ стоит свой $\rho_{t+1}$:
+    \begin{align*}
+        E_0 &= \rho_0\delta_0^s + \rho_0\gamma_1\lambda_1 E_1
+             = \rho_0\delta_0^s + \rho_0\gamma_1\lambda_1\big(\rho_1\delta_1^s + \rho_1\gamma_2\lambda_2 E_2\big)\\
+            &= \rho_0\delta_0^s + \gamma_1\lambda_1\rho_1\,\rho_1... \quad\Longrightarrow\quad
+            E_0 = \sum_{k=0}^{\infty}\Big(\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i\Big)\rho_k\,\delta_k^s.
+    \end{align*}
+    Множитель $\rho_k$ снаружи произведения приходит из самого $E_k$, а
+    $\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i$ --- из накопленных рекурсивных
+    коэффициентов. Итого
+    \begin{equation*}
+        G_0^{\lambda s} - V_0 = \sum_{k=0}^{\infty}\Big(\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i\Big)\rho_k\,\delta_k^s.
+    \end{equation*}
+
+    Равенство точное лишь при неизменных весах: только тогда все $V_k$ и
+    $\delta_k^s$ считаются через один $\mathbf w$ и добавленные-вычтенные $V_{t+1}$
+    сокращаются в телескопе.
+\end{solution}
+
+\subsection{Упражнение 12.9(с. 361)}
+Усечённый вариант общего дохода с разделённой стратегией обозначается
+$G_{t:h}^{\lambda s}$. Попробуйте угадать его правильное выражение, взяв за основу
+(12.24).
+
+\begin{solution}
+    По образцу (12.24) усечение горизонтом $h$ означает, что доступны только
+    TD-ошибки $\delta_k^s$ до $k=h-1$ (последняя, $\delta_{h-1}^s$, бутстрапит на
+    $V_h$). Обобщая (12.24) с произвольного $t$ и обрезая сумму на $h-1$:
+    \begin{equation*}
+        G_{t:h}^{\lambda s} = V_t + \sum_{k=t}^{h-1}\Big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\Big)\rho_k\,\delta_k^s,
+    \end{equation*}
+    где $V_k = \hat v(S_k,\mathbf w)$, $\delta_k^s = R_{k+1} + \gamma_{k+1}V_{k+1} - V_k$,
+    а $\rho_k = \pi(A_k\mid S_k)/b(A_k\mid S_k)$. При $k=t$ произведение пустое и
+    равно $1$, так что первый член суммы --- $\rho_t\delta_t^s$.
+
+    Проверки. Крайний член $\delta_{h-1}^s$ вносит $\gamma_h V_h$, то есть доход
+    упирается в бутстрап $\hat v(S_h,\mathbf w)$ на горизонте --- согласуется с
+    базой рекурсии из упражнения 12.7 ($G_{h:h}^{\lambda s}=\hat v(S_h)$). При
+    $h\to\infty$ выражение переходит в неусечённое (12.24).
+
+    Замечание. Как и (12.24), это выражение точно при неизменных весах (все $V_k$
+    считаются через один $\mathbf w$). В онлайновом использовании веса меняются, и
+    строгая форма потребовала бы переиндексации весов внутри $\delta_k^s$ (как
+    $\delta_i'$ с $\mathbf w_i,\mathbf w_{i-1}$ в (12.10)); но по образцу (12.24)
+    достаточно приведённой формы.
+\end{solution}
+
+\subsection{Упражнение 12.10(с. 363)}
+Докажите, что приближённое равенство (12.27) становится точным, если функция
+ценности не изменяется. Для сокращения записи рассмотрите случай $t=0$ и
+воспользуйтесь нотацией $Q_k \doteq \hat q(S_k,A_k,\mathbf w)$.
+
+\begin{equation}
+    G_0^{\lambda a} - Q_0 = \sum_{k=0}^{\infty}\Big(\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i\Big)\delta_k^a,
+    \qquad \delta_k^a = R_{k+1} + \gamma_{k+1}\bar V_k(S_{k+1}) - Q_k,
+    \tag{12.27}
+\end{equation}
+где $\bar V_k(S_{k+1}) = \sum_a \pi(a\mid S_{k+1})\hat q(S_{k+1},a,\mathbf w)$.
+
+\begin{solution}
+    Веса фиксированы, $Q_k=\hat q(S_k,A_k,\mathbf w)$. Обозначим $E_t \doteq
+    G_t^{\lambda a} - Q_t$. Off-policy $\lambda$-доход Expected Sarsa (12.26) ---
+    текущее действие усредняется ожиданием $\bar V_t$, а importance sampling
+    $\rho_{t+1}$ корректирует лишь переход к следующему доходу:
+    \begin{equation*}
+        G_t^{\lambda a} = R_{t+1} + \gamma_{t+1}\Big[(1-\lambda_{t+1})\bar V_t(S_{t+1})
+        + \lambda_{t+1}\big(\rho_{t+1}G_{t+1}^{\lambda a} + (1-\rho_{t+1})\bar V_t(S_{t+1})\big)\Big].
+    \end{equation*}
+
+    Вычитаем $Q_0$ (берём $t=0$). Слагаемые с $\bar V_0(S_1)$ собираются как
+    $\gamma_1(1-\lambda_1)\bar V_0 + \gamma_1\lambda_1(1-\rho_1)\bar V_0
+    = \gamma_1\bar V_0 - \gamma_1\lambda_1\rho_1\bar V_0$, поэтому
+    \begin{equation*}
+        E_0 = \underbrace{R_1 + \gamma_1\bar V_0(S_1) - Q_0}_{\delta_0^a}
+        + \gamma_1\lambda_1\rho_1\big(G_1^{\lambda a} - \bar V_0(S_1)\big).
+    \end{equation*}
+    Замена $\bar V_0(S_1)\to Q_1$ в последнем члене компенсируется определением
+    $\delta_1^a$ на следующем шаге (бутстрап через $\bar V_1$), что даёт чистую
+    рекурсию
+    \begin{equation*}
+        E_0 = \delta_0^a + \gamma_1\lambda_1\rho_1\,E_1.
+    \end{equation*}
+    В общем виде $E_t = \delta_t^a + \gamma_{t+1}\lambda_{t+1}\rho_{t+1}E_{t+1}$.
+    Раскручивая от $t=0$:
+    \begin{equation*}
+        G_0^{\lambda a} - Q_0 = \sum_{k=0}^{\infty}\Big(\prod_{i=1}^{k}\gamma_i\lambda_i\rho_i\Big)\delta_k^a.
+    \end{equation*}
+\end{solution}
+
+\subsection{Упражнение 12.11(с. 363)}
+Усечённый вариант общего дохода с разделённой стратегией обозначается
+$G_{t:h}^{\lambda a}$. Попробуйте угадать его правильное выражение, взяв за основу
+(12.27).
+
+\begin{solution}
+    По образцу (12.27) усечение горизонтом $h$ обрезает сумму на $k=h-1$
+    (последняя ошибка $\delta_{h-1}^a$ бутстрапит на шаг $h$):
+    \begin{equation*}
+        G_{t:h}^{\lambda a} = Q_t + \sum_{k=t}^{h-1}\Big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\Big)\delta_k^a,
+    \end{equation*}
+    где $Q_k = \hat q(S_k,A_k,\mathbf w)$, $\delta_k^a = R_{k+1} + \gamma_{k+1}\bar V_k(S_{k+1}) - Q_k$,
+    $\bar V_k(S_{k+1}) = \sum_a \pi(a\mid S_{k+1})\hat q(S_{k+1},a,\mathbf w)$, а
+    $\rho_i = \pi(A_i\mid S_i)/b(A_i\mid S_i)$. При $k=t$ произведение пустое ($=1$),
+    так что первый член суммы --- просто $\delta_t^a$.
+
+    Проверки. Как и в (12.27), снаружи произведения \emph{нет} отдельного
+    множителя $\rho_k$ (в отличие от усечённого дохода для состояний из
+    упражнения 12.9) --- текущее действие усредняется через $\bar V_k$, поэтому
+    $\rho$ входит лишь за переходы. Крайний член $\delta_{h-1}^a$ вносит
+    $\gamma_h\bar V_{h-1}(S_h)$, то есть доход упирается в ожидание $\bar
+    V_{h-1}(S_h)$ на горизонте --- согласуется с базой Expected Sarsa из упражнения
+    12.7 ($G_{h:h}^{\lambda a}=\bar V_{h-1}(S_h)$). При $h\to\infty$ выражение
+    переходит в неусечённое (12.27).
+\end{solution}
+
+\subsection{Упражнение 12.12(с. 363)}
+Детально проведите все намеченные выше шаги вывода (12.29) из (12.27). Начните с
+обновления (12.15), подставьте $G_t^{\lambda a}$ из (12.26) вместо $G_t^\lambda$, а
+затем выполните те же шаги, что привели к (12.25).
+\begin{equation}
+    \mathbf w_{t+1} \doteq \mathbf w_t + \alpha\big[G_t^\lambda - \hat q(S_t,A_t,\mathbf w_t)\big]\nabla\hat q(S_t,A_t,\mathbf w_t).
+    \tag{12.15}
+\end{equation}
+\begin{equation}
+    G_t^{\lambda a} \doteq R_{t+1} + \gamma_{t+1}\Big[(1-\lambda_{t+1})\bar V_t(S_{t+1})
+    + \lambda_{t+1}\big(\rho_{t+1}G_{t+1}^{\lambda a} + (1-\rho_{t+1})\bar V_t(S_{t+1})\big)\Big].
+    \tag{12.26}
+\end{equation}
+\begin{equation}
+    G_t^{\lambda a} - \hat q(S_t,A_t,\mathbf w) \approx
+    \sum_{k=t}^{\infty}\Big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\Big)\delta_k^a.
+    \tag{12.27}
+\end{equation}
+\begin{equation}
+    \mathbf z_t \doteq \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1} + \rho_t\nabla\hat v(S_t,\mathbf w_t).
+    \tag{12.25}
+\end{equation}
+\begin{equation}
+    \mathbf z_t \doteq \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1} + \nabla\hat q(S_t,A_t,\mathbf w_t).
+    \tag{12.29}
+\end{equation}
+\begin{solution}
+    Веса считаем фиксированными (при этом (12.27) точно), обозначим
+    $\nabla_t \doteq \nabla\hat q(S_t,A_t,\mathbf w_t)$, $Q_t=\hat q(S_t,A_t,\mathbf w_t)$.
+
+    Обновление прямого представления (12.15) с $\lambda$-доходом для действий:
+    \begin{equation*}
+        \mathbf w_{t+1} = \mathbf w_t + \alpha\big[G_t^{\lambda a} - Q_t\big]\nabla_t.
+    \end{equation*}
+    Подставляем разложение (12.27), $G_t^{\lambda a}-Q_t=\sum_{k=t}^{\infty}
+    \big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\big)\delta_k^a$, и суммируем
+    обновления:
+    \begin{equation*}
+        \sum_{t}\Delta\mathbf w_t
+        = \alpha\sum_{t=0}^{\infty}\sum_{k=t}^{\infty}
+          \Big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\Big)\delta_k^a\,\nabla_t.
+    \end{equation*}
+
+    Применяем правило суммирования (меняем порядок обхода треугольника $t\le k$,
+    как в упражнении 12.4):
+    \begin{equation*}
+        = \alpha\sum_{k=0}^{\infty}\delta_k^a
+          \underbrace{\sum_{t=0}^{k}\Big(\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i\Big)\nabla_t}_{\displaystyle \doteq\ \mathbf z_k},
+    \end{equation*}
+    то есть обновление приобретает обычную полуградиентную форму (12.7)
+    $\mathbf w \leftarrow \mathbf w + \alpha\delta_k^a\mathbf z_k$, где $\mathbf z_k$ ---
+    внутренняя сумма.
+
+    Выведем для неё рекурсию. Отделяем член $t=k$ (произведение пустое, равно $1$) и
+    выносим из остальных общий множитель с $i=k$, пользуясь
+    $\prod_{i=t+1}^{k}\gamma_i\lambda_i\rho_i = \gamma_k\lambda_k\rho_k\prod_{i=t+1}^{k-1}\gamma_i\lambda_i\rho_i$:
+    \begin{equation*}
+        \mathbf z_k = \nabla_k + \gamma_k\lambda_k\rho_k
+        \underbrace{\sum_{t=0}^{k-1}\Big(\prod_{i=t+1}^{k-1}\gamma_i\lambda_i\rho_i\Big)\nabla_t}_{=\ \mathbf z_{k-1}}
+        = \gamma_k\lambda_k\rho_k\,\mathbf z_{k-1} + \nabla_k.
+    \end{equation*}
+    Переименовав $k\to t$, получаем (12.29):
+    \begin{equation*}
+        \mathbf z_t \doteq \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1} + \nabla\hat q(S_t,A_t,\mathbf w_t).
+    \end{equation*}
+\end{solution}
+
+\subsection{Упражнение 12.13(с. 364)}
+Как выглядят «голландский» и «замещающий» варианты следов приемлемости с
+разделённой стратегией для методов вычисления ценности состояний и действий?
+
+\begin{solution}
+    Отправная точка --- накопительные следы с разделённой стратегией: (12.25) для
+    состояний и (12.29) для действий. Модифицируется только способ добавления
+    свежего вклада; член переноса $\gamma_t\lambda_t\rho_t\mathbf z_{t-1}$ во всех
+    вариантах одинаков. Замещающие следы определены для бинарных признаков.
+
+    \textbf{Ценности состояний.} Свежий вклад входит с множителем $\rho_t$.
+    \begin{align*}
+        \text{накопительный:}\quad
+        &\mathbf z_t = \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1} + \rho_t\nabla\hat v(S_t,\mathbf w_t),\\
+        \text{замещающий:}\quad
+        &z_{i,t} =
+        \begin{cases}
+            \rho_t, & x_i(S_t) = 1,\\
+            \gamma_t\lambda_t\rho_t\,z_{i,t-1}, & \text{иначе},
+        \end{cases}\\
+        \text{голландский:}\quad
+        &\mathbf z_t = \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1}
+        + \rho_t\big(1 - \alpha\gamma_t\lambda_t\rho_t\,\mathbf z_{t-1}^\top\mathbf x_t\big)\mathbf x_t,
+        \quad \mathbf x_t = \mathbf x(S_t).
+    \end{align*}
+    В замещающем варианте активные компоненты сбрасываются в $\rho_t$, а не в
+    единицу: при $\rho_t=0$ (целевая стратегия никогда не выбрала бы это действие)
+    след обязан обнулиться полностью.
+
+    \textbf{Ценности действий.} Свежий вклад входит без множителя $\rho_t$.
+    \begin{align*}
+        \text{накопительный:}\quad
+        &\mathbf z_t = \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1} + \nabla\hat q(S_t,A_t,\mathbf w_t),\\
+        \text{замещающий:}\quad
+        &z_{i,t} =
+        \begin{cases}
+            1, & x_i(S_t,A_t) = 1,\\
+            \gamma_t\lambda_t\rho_t\,z_{i,t-1}, & \text{иначе},
+        \end{cases}\\
+        \text{голландский:}\quad
+        &\mathbf z_t = \gamma_t\lambda_t\rho_t\,\mathbf z_{t-1}
+        + \big(1 - \alpha\gamma_t\lambda_t\rho_t\,\mathbf z_{t-1}^\top\mathbf x_t\big)\mathbf x_t,
+        \quad \mathbf x_t = \mathbf x(S_t,A_t).
+    \end{align*}
+
+    Асимметрия между случаями та же, что в (12.25) и (12.29): обновляется ценность
+    конкретной пары $(S_t,A_t)$, определённая одинаково при любой стратегии,
+    поэтому текущее действие корректировать не нужно, и выборка по значимости
+    входит только в член переноса. Следствие: при $\rho_t=0$ у состояний след
+    обнуляется целиком, а у действий свежий вклад сохраняется --- обнуляется лишь
+    кредит, переносимый от предшествующих шагов.
+
+    Проверки: при $\rho_t=1$ все формулы сворачиваются в соответствующие
+    on-policy варианты (в частности, голландский --- в (12.11)); в табличном
+    случае при $\alpha=1$ и $\rho_t=1$ голландский совпадает с замещающим.
+\end{solution}
+
+\subsection{*Упражнение 12.14(с. 366)}
+Как можно обобщить алгоритм Double Expected Sarsa на следы приемлемости?
+
+\begin{solution}
+    Поддерживаем два вектора весов $\mathbf w_1,\mathbf w_2$ с функциями ценности
+    $\hat q_1(s,a)=\hat q(s,a,\mathbf w_1)$ и $\hat q_2(s,a)=\hat q(s,a,\mathbf w_2)$,
+    а также две целевые стратегии $\pi_1,\pi_2$ (жадные или $\varepsilon$-жадные
+    относительно $\hat q_1$ и $\hat q_2$ соответственно). Поведение порождается
+    стратегией $b$, коэффициенты выборки по значимости --- свои для каждой целевой
+    стратегии:
+    \begin{equation*}
+        \rho_{1,t} = \frac{\pi_1(A_t\mid S_t)}{b(A_t\mid S_t)}, \qquad
+        \rho_{2,t} = \frac{\pi_2(A_t\mid S_t)}{b(A_t\mid S_t)}.
+    \end{equation*}
+
+    \textbf{Два следа.} Каждой функции ценности --- свой след, накапливающий
+    градиенты только этой функции и затухающий со своим $\rho$ (по образцу (12.29)):
+    \begin{align*}
+        \mathbf z_{1,t} &= \gamma_t\lambda_t\rho_{1,t}\,\mathbf z_{1,t-1} + \nabla\hat q(S_t,A_t,\mathbf w_{1,t}),\\
+        \mathbf z_{2,t} &= \gamma_t\lambda_t\rho_{2,t}\,\mathbf z_{2,t-1} + \nabla\hat q(S_t,A_t,\mathbf w_{2,t}).
+    \end{align*}
+    Оба следа обновляются на \emph{каждом} шаге, независимо от того, какой вектор
+    весов будет обновлён: пара $(S_t,A_t)$ действительно посещена, и когда очередь
+    дойдёт до второго вектора, у него должен быть накоплен корректный кредит за
+    прошедшие шаги.
+
+    \textbf{Перекрёстные TD-ошибки.} Как и в Double Expected Sarsa, стратегия
+    берётся по одной функции, а ценности для ожидания --- по другой:
+    \begin{align*}
+        \delta_{1,t} &= R_{t+1} + \gamma_{t+1}\sum_a \pi_1(a\mid S_{t+1})\,\hat q(S_{t+1},a,\mathbf w_{2,t}) - \hat q(S_t,A_t,\mathbf w_{1,t}),\\
+        \delta_{2,t} &= R_{t+1} + \gamma_{t+1}\sum_a \pi_2(a\mid S_{t+1})\,\hat q(S_{t+1},a,\mathbf w_{1,t}) - \hat q(S_t,A_t,\mathbf w_{2,t}).
+    \end{align*}
+
+    \textbf{Обновление весов.} На каждом шаге с вероятностью $0.5$ выбирается один
+    из векторов, и обновляется только он --- соответствующей парой
+    $(\delta_i,\mathbf z_i)$:
+    \begin{equation*}
+        \mathbf w_{1,t+1} = \mathbf w_{1,t} + \alpha\,\delta_{1,t}\,\mathbf z_{1,t}
+        \qquad\text{или}\qquad
+        \mathbf w_{2,t+1} = \mathbf w_{2,t} + \alpha\,\delta_{2,t}\,\mathbf z_{2,t}.
+    \end{equation*}
+
+    Замечания. Два следа нужны потому, что каждый накапливает градиенты своей
+    функции: смешивать $\nabla\hat q_1$ и $\nabla\hat q_2$ в одном векторе нельзя ---
+    в общем случае это разные направления, и такая смесь не отвечает никакому
+    прямому представлению. (В линейном случае $\nabla\hat q(S,A)=\mathbf x(S,A)$ не
+    зависит от весов, и одного следа хватило бы, но коэффициенты затухания всё равно
+    различаются.) Различие $\rho_{1,t}$ и $\rho_{2,t}$ существенно: если действие
+    жадное по $\hat q_2$, но не по $\hat q_1$, то $\rho_{1,t}=0$ и след $\mathbf z_1$
+    обрывается, тогда как $\mathbf z_2$ продолжает жить --- каждая оценка видит
+    траекторию через призму своей целевой стратегии, что и сохраняет независимость
+    двух оценок, ради которой введён Double-вариант. Общий $\rho$ обрывал бы или
+    сохранял оба следа одновременно, смазывая этот эффект.
+\end{solution}
